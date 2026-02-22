@@ -39,24 +39,24 @@ function setupEventListeners() {
 // API Functions
 async function fetchTodos() {
     const params = new URLSearchParams();
-    
+
     if (currentSearch) {
         params.append('q', currentSearch);
     }
-    
+
     if (currentFilter === 'completed') {
         params.append('is_done', 'true');
     } else if (currentFilter === 'pending') {
         params.append('is_done', 'false');
     }
-    
+
     params.append('sort', currentSort);
     params.append('limit', '100');
     params.append('offset', '0');
-    
+
     const response = await fetch(`${API_BASE_URL}/todos?${params.toString()}`);
     if (!response.ok) throw new Error('Failed to fetch todos');
-    
+
     const data = await response.json();
     return data.items;
 }
@@ -69,12 +69,12 @@ async function createTodo(title) {
         },
         body: JSON.stringify({ title }),
     });
-    
+
     if (!response.ok) {
         const error = await response.json();
         throw new Error(error.detail || 'Failed to create todo');
     }
-    
+
     return response.json();
 }
 
@@ -86,7 +86,7 @@ async function updateTodo(id, data) {
         },
         body: JSON.stringify(data),
     });
-    
+
     if (!response.ok) throw new Error('Failed to update todo');
     return response.json();
 }
@@ -95,7 +95,7 @@ async function deleteTodo(id) {
     const response = await fetch(`${API_BASE_URL}/todos/${id}`, {
         method: 'DELETE',
     });
-    
+
     if (!response.ok) throw new Error('Failed to delete todo');
     return response.json();
 }
@@ -103,13 +103,13 @@ async function deleteTodo(id) {
 // Handler Functions
 async function handleAddTodo(e) {
     e.preventDefault();
-    
+
     const title = todoInput.value.trim();
     if (!title || title.length < 3) {
         showToast('Tiêu đề phải có ít nhất 3 ký tự', 'error');
         return;
     }
-    
+
     try {
         await createTodo(title);
         todoInput.value = '';
@@ -122,7 +122,17 @@ async function handleAddTodo(e) {
 
 async function handleToggleTodo(id, currentStatus) {
     try {
-        await updateTodo(id, { is_done: !currentStatus });
+        // Sử dụng PATCH để cập nhật một phần (is_done) thay vì PUT
+        const response = await fetch(`${API_BASE_URL}/todos/${id}`, {
+            method: 'PATCH',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ is_done: !currentStatus }),
+        });
+
+        if (!response.ok) throw new Error('Không thể cập nhật trạng thái');
+
         await loadTodos();
         showToast(currentStatus ? 'Đã đánh dấu chưa hoàn thành' : 'Đã hoàn thành!', 'success');
     } catch (error) {
@@ -132,7 +142,7 @@ async function handleToggleTodo(id, currentStatus) {
 
 async function handleDeleteTodo(id) {
     if (!confirm('Bạn có chắc muốn xóa công việc này?')) return;
-    
+
     try {
         await deleteTodo(id);
         showToast('Đã xóa công việc', 'success');
@@ -182,14 +192,14 @@ async function loadTodos() {
 
 function renderTodos() {
     todoList.innerHTML = '';
-    
+
     if (todos.length === 0) {
         emptyState.style.display = 'block';
         return;
     }
-    
+
     emptyState.style.display = 'none';
-    
+
     todos.forEach(todo => {
         const li = createTodoElement(todo);
         todoList.appendChild(li);
@@ -199,7 +209,7 @@ function renderTodos() {
 function createTodoElement(todo) {
     const li = document.createElement('li');
     li.className = `todo-item ${todo.is_done ? 'completed' : ''}`;
-    
+
     const createdDate = new Date(todo.created_at).toLocaleString('vi-VN', {
         year: 'numeric',
         month: '2-digit',
@@ -207,7 +217,7 @@ function createTodoElement(todo) {
         hour: '2-digit',
         minute: '2-digit'
     });
-    
+
     li.innerHTML = `
         <div class="todo-checkbox ${todo.is_done ? 'checked' : ''}" data-id="${todo.id}" data-status="${todo.is_done}"></div>
         <div class="todo-content">
@@ -222,14 +232,14 @@ function createTodoElement(todo) {
             </button>
         </div>
     `;
-    
+
     // Add event listeners
     const checkbox = li.querySelector('.todo-checkbox');
     checkbox.addEventListener('click', () => handleToggleTodo(todo.id, todo.is_done));
-    
+
     const deleteBtn = li.querySelector('.btn-delete');
     deleteBtn.addEventListener('click', () => handleDeleteTodo(todo.id));
-    
+
     return li;
 }
 
@@ -237,7 +247,7 @@ function updateStats() {
     const total = todos.length;
     const completed = todos.filter(t => t.is_done).length;
     const pending = total - completed;
-    
+
     totalCount.textContent = total;
     completedCount.textContent = completed;
     pendingCount.textContent = pending;
@@ -252,7 +262,7 @@ function showToast(message, type = 'success') {
     const toast = document.getElementById('toast');
     toast.textContent = message;
     toast.className = `toast ${type} show`;
-    
+
     setTimeout(() => {
         toast.classList.remove('show');
     }, 3000);

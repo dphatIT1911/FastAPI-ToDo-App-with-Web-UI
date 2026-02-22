@@ -6,12 +6,14 @@ from datetime import datetime
 class ToDoBase(BaseModel):
     """Base schema for ToDo with common properties."""
     title: str = Field(..., min_length=3, max_length=100, description="Title of the ToDo item")
+    description: Optional[str] = Field(None, max_length=500, description="Detailed description of the ToDo item")
     is_done: bool = Field(default=False, description="Whether the ToDo is completed")
 
 
 class ToDoCreate(BaseModel):
     """Schema for creating a new ToDo item."""
     title: str = Field(..., min_length=3, max_length=100, description="Title of the ToDo item")
+    description: Optional[str] = Field(None, max_length=500, description="Detailed description of the ToDo item")
     
     @field_validator('title')
     @classmethod
@@ -25,6 +27,7 @@ class ToDoCreate(BaseModel):
 class ToDoUpdate(BaseModel):
     """Schema for updating an existing ToDo item."""
     title: Optional[str] = Field(None, min_length=3, max_length=100, description="Title of the ToDo item")
+    description: Optional[str] = Field(None, max_length=500, description="Detailed description of the ToDo item")
     is_done: Optional[bool] = Field(None, description="Whether the ToDo is completed")
     
     @field_validator('title')
@@ -42,8 +45,10 @@ class ToDoResponse(BaseModel):
     """Schema for ToDo response with all properties."""
     id: int = Field(..., description="Unique identifier of the ToDo item")
     title: str = Field(..., description="Title of the ToDo item")
+    description: Optional[str] = Field(None, description="Detailed description of the ToDo item")
     is_done: bool = Field(..., description="Whether the ToDo is completed")
     created_at: datetime = Field(..., description="Creation timestamp")
+    updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
     
     class Config:
         from_attributes = True
@@ -55,3 +60,4 @@ class ToDoListResponse(BaseModel):
     total: int = Field(..., description="Total number of items")
     limit: int = Field(..., description="Number of items per page")
     offset: int = Field(..., description="Number of items to skip")
+
