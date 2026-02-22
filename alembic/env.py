@@ -20,6 +20,7 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from app.db.database import Base
 from app.models.todo import Todo
+from app.models.user import User
 
 # add your model's MetaData object here
 # for 'autogenerate' support
@@ -51,6 +52,7 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        render_as_batch=True,
     )
 
     with context.begin_transaction():
@@ -72,7 +74,9 @@ def run_migrations_online() -> None:
 
     with connectable.connect() as connection:
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, 
+            target_metadata=target_metadata,
+            render_as_batch=True
         )
 
         with context.begin_transaction():
