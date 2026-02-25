@@ -1,14 +1,17 @@
 from typing import List, Optional, Tuple
 from sqlalchemy.orm import Session
-from sqlalchemy import desc, asc
+from sqlalchemy import desc, asc, func
+from datetime import datetime, timezone, date
 from app.models.todo import Todo
 
 class ToDoRepository:
     """Repository quản lý ToDo theo User sở hữu."""
     
-    def create(self, db: Session, title: str, owner_id: int, description: Optional[str] = None) -> Todo:
+    def create(self, db: Session, title: str, owner_id: int, description: Optional[str] = None, due_date: Optional[datetime] = None, tags: Optional[List[str]] = None) -> Todo:
         """Tạo ToDo mới gán cho User ID cụ thể."""
-        db_todo = Todo(title=title, description=description, owner_id=owner_id)
+        if tags is None:
+            tags = []
+        db_todo = Todo(title=title, description=description, owner_id=owner_id, due_date=due_date, tags=tags)
         db.add(db_todo)
         db.commit()
         db.refresh(db_todo)
@@ -57,7 +60,9 @@ class ToDoRepository:
         owner_id: int,
         title: Optional[str] = None, 
         description: Optional[str] = None,
-        is_done: Optional[bool] = None
+        is_done: Optional[bool] = None,
+        due_date: Optional[datetime] = None,
+        tags: Optional[List[str]] = None
     ) -> Optional[Todo]:
         """Cập nhật ToDo - CHỈ cho phép nếu là chủ sở hữu."""
         db_todo = self.get_by_id(db, todo_id, owner_id)
@@ -70,6 +75,10 @@ class ToDoRepository:
             db_todo.description = description
         if is_done is not None:
             db_todo.is_done = is_done
+        if due_date is not None:
+            db_todo.due_date = due_date
+        if tags is not None:
+            db_todo.tags = tags
             
         db.commit()
         db.refresh(db_todo)
@@ -83,5 +92,22 @@ class ToDoRepository:
         db.delete(db_todo)
         db.commit()
         return True
+
+    def get_overdue(self, db: Session, owner_id: int, limit: int = 100, offset: int = 0) -> Tuple[List[Todo], int]:
+        """Lấy các công việc đã quá hạn và chưa hoàn thành."""
+        now = datetime.now(timezone.utc)
+        query = db.query(Todo).filter(Todo.owner_id == owner_id, Todo.is_done == False, Todo.due_date < now)
+        total = query.count()
+        query = query.order_by(asc(Todo.due_date)).offset(offset).limit(limit)
+        return query.all(), total
+
+    def get_today(self, db: Session, owner_id: int, limit: int = 100, offset: int = 0) -> Tuple[List[Todo], int]:
+        """Lấy các công việc có deadline trong hôm nay."""
+        today_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
+        today_end = today_start.replace(hour=23, minute=59, second=59, microsecond=999999)
+        query = db.query(Todo).filter(Todo.owner_id == owner_id, Todo.due_date >= today_start, Todo.due_date <= today_end)
+        total = query.count()
+        query = query.order_by(asc(Todo.due_date)).offset(offset).limit(limit)
+        return query.all(), total
 
 todo_repository = ToDoRepository()

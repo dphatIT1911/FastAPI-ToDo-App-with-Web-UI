@@ -8,12 +8,16 @@ class ToDoBase(BaseModel):
     title: str = Field(..., min_length=3, max_length=100, description="Title of the ToDo item")
     description: Optional[str] = Field(None, max_length=500, description="Detailed description of the ToDo item")
     is_done: bool = Field(default=False, description="Whether the ToDo is completed")
+    due_date: Optional[datetime] = Field(None, description="Deadline for the ToDo item")
+    tags: Optional[List[str]] = Field(default_factory=list, description="Tags associated with the ToDo item")
 
 
 class ToDoCreate(BaseModel):
     """Schema for creating a new ToDo item."""
     title: str = Field(..., min_length=3, max_length=100, description="Title of the ToDo item")
     description: Optional[str] = Field(None, max_length=500, description="Detailed description of the ToDo item")
+    due_date: Optional[datetime] = Field(None, description="Deadline for the ToDo item")
+    tags: Optional[List[str]] = Field(default_factory=list, description="Tags associated with the ToDo item")
     
     @field_validator('title')
     @classmethod
@@ -29,6 +33,8 @@ class ToDoUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=3, max_length=100, description="Title of the ToDo item")
     description: Optional[str] = Field(None, max_length=500, description="Detailed description of the ToDo item")
     is_done: Optional[bool] = Field(None, description="Whether the ToDo is completed")
+    due_date: Optional[datetime] = Field(None, description="Deadline for the ToDo item")
+    tags: Optional[List[str]] = Field(None, description="Tags associated with the ToDo item")
     
     @field_validator('title')
     @classmethod
@@ -47,6 +53,8 @@ class ToDoResponse(BaseModel):
     title: str = Field(..., description="Title of the ToDo item")
     description: Optional[str] = Field(None, description="Detailed description of the ToDo item")
     is_done: bool = Field(..., description="Whether the ToDo is completed")
+    due_date: Optional[datetime] = Field(None, description="Deadline for the ToDo item")
+    tags: List[str] = Field(default_factory=list, description="Tags associated with the ToDo item")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: Optional[datetime] = Field(None, description="Last update timestamp")
     

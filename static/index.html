@@ -109,13 +109,31 @@
                 </div>
             </div>
 
-            <!-- Add Todo Section -->
             <section class="add-section">
                 <form id="addTodoForm" class="add-form">
-                    <div class="input-group">
+                    <div class="input-group todo-main-inputs">
                         <input type="text" id="todoInput" class="todo-input"
-                            placeholder="Thêm công việc mới... (3-100 ký tự)" minlength="3" maxlength="100" required>
-                        <button type="submit" class="btn btn-primary">
+                            placeholder="Thêm công việc... (*Bắt buộc, 3-100 ký tự)" minlength="3" maxlength="100"
+                            required>
+                    </div>
+
+                    <div class="input-group todo-extra-inputs" style="margin-top: 1rem; flex-wrap: wrap;">
+                        <div class="input-wrapper" style="flex: 1; min-width: 150px;">
+                            <label for="todoDueDate"
+                                style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Hạn
+                                chót:</label>
+                            <input type="date" id="todoDueDate" class="todo-input">
+                        </div>
+
+                        <div class="input-wrapper" style="flex: 2; min-width: 200px;">
+                            <label for="todoTags"
+                                style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 4px; display: block;">Thẻ
+                                (Cách nhau bằng dấu phẩy):</label>
+                            <input type="text" id="todoTags" class="todo-input"
+                                placeholder="VD: Công việc, Nhà cửa, Quan trọng">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="margin-top: auto; height: 44px;">
                             <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                                 stroke-width="2">
                                 <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -139,12 +157,15 @@
                         <input type="text" id="searchInput" class="filter-input" placeholder="Tìm kiếm...">
                     </div>
 
-                    <!-- Status Filter -->
-                    <select id="statusFilter" class="filter-select">
-                        <option value="all">Tất cả</option>
-                        <option value="pending">Chưa xong</option>
-                        <option value="completed">Hoàn thành</option>
-                    </select>
+                    <div class="filter-item status-filter">
+                        <select id="statusFilter" class="filter-select">
+                            <option value="all">Tất cả</option>
+                            <option value="pending">Chưa xong</option>
+                            <option value="completed">Hoàn thành</option>
+                            <option value="today">Hôm nay</option>
+                            <option value="overdue">Quá hạn</option>
+                        </select>
+                    </div>
 
                     <!-- Sort -->
                     <select id="sortOrder" class="filter-select">

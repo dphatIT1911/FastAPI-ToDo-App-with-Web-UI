@@ -21,6 +21,8 @@ const loginForm = document.getElementById('loginForm');
 const registerForm = document.getElementById('registerForm');
 
 const todoInput = document.getElementById('todoInput');
+const todoDueDate = document.getElementById('todoDueDate');
+const todoTags = document.getElementById('todoTags');
 const addTodoForm = document.getElementById('addTodoForm');
 const todoList = document.getElementById('todoList');
 const searchInput = document.getElementById('searchInput');
@@ -163,8 +165,19 @@ async function handleRegister(e) {
 
 // API Functions - Todos (With Token)
 async function fetchTodos() {
+    let endpoint = `${API_BASE_URL}/todos`;
+
+    // Đổi endpoint dựa theo Filter
+    if (currentFilter === 'today') {
+        endpoint = `${API_BASE_URL}/todos/today`;
+    } else if (currentFilter === 'overdue') {
+        endpoint = `${API_BASE_URL}/todos/overdue`;
+    }
+
     const params = new URLSearchParams();
     if (currentSearch) params.append('q', currentSearch);
+
+    // Nếu filter là completed hoặc pending và chỉ áp dụng cho endpoint gốc
     if (currentFilter === 'completed') params.append('is_done', 'true');
     else if (currentFilter === 'pending') params.append('is_done', 'false');
 
@@ -172,7 +185,7 @@ async function fetchTodos() {
     params.append('limit', '100');
     params.append('offset', '0');
 
-    const response = await fetch(`${API_BASE_URL}/todos?${params.toString()}`, {
+    const response = await fetch(`${endpoint}?${params.toString()}`, {
         headers: { 'Authorization': `Bearer ${token}` }
     });
 
@@ -192,6 +205,18 @@ async function handleAddTodo(e) {
     const title = todoInput.value.trim();
     if (!title) return;
 
+    // Lấy hạn chót
+    let due_date = todoDueDate.value;
+    if (due_date) {
+        due_date = new Date(due_date).toISOString(); // parse sang ISO 8601
+    } else {
+        due_date = null;
+    }
+
+    // Lấy thẻ Tags (tách bằng dấu phẩy)
+    let tagsStr = todoTags.value;
+    let tags = tagsStr ? tagsStr.split(',').map(tag => tag.trim()).filter(tag => tag.length > 0) : [];
+
     try {
         const response = await fetch(`${API_BASE_URL}/todos`, {
             method: 'POST',
@@ -199,12 +224,14 @@ async function handleAddTodo(e) {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
-            body: JSON.stringify({ title }),
+            body: JSON.stringify({ title, due_date, tags }),
         });
 
         if (!response.ok) throw new Error('Không thể thêm công việc');
 
         todoInput.value = '';
+        todoDueDate.value = '';
+        todoTags.value = '';
         showToast('Đã thêm công việc!', 'success');
         await loadTodos();
     } catch (error) {
@@ -282,11 +309,29 @@ function createTodoElement(todo) {
     li.className = `todo-item ${todo.is_done ? 'completed' : ''}`;
     const date = new Date(todo.created_at).toLocaleString('vi-VN');
 
+    // Tạo HTML cho Deadline
+    let dueHtml = '';
+    if (todo.due_date) {
+        const dueDateObj = new Date(todo.due_date);
+        const isOverdue = dueDateObj < new Date() && !todo.is_done;
+        dueHtml = `<span class="todo-deadline ${isOverdue ? 'overdue' : ''}">🕒 Hạn chót: ${dueDateObj.toLocaleDateString('vi-VN')}</span>`;
+    }
+
+    // Tạo HTML cho Tags
+    let tagsHtml = '';
+    if (todo.tags && todo.tags.length > 0) {
+        tagsHtml = '<div class="todo-tags">' + todo.tags.map(t => `<span class="tag-badge">${escapeHtml(t)}</span>`).join('') + '</div>';
+    }
+
     li.innerHTML = `
         <div class="todo-checkbox ${todo.is_done ? 'checked' : ''}"></div>
         <div class="todo-content">
             <div class="todo-title">${escapeHtml(todo.title)}</div>
-            <div class="todo-date">${date}</div>
+            ${tagsHtml}
+            <div class="todo-meta">
+                <span class="todo-date">📅 Tạo lúc: ${date}</span>
+                ${dueHtml}
+            </div>
         </div>
         <div class="todo-actions">
             <button class="btn-icon-only btn-delete" title="Xóa">
