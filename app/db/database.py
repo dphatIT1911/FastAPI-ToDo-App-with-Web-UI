@@ -1,13 +1,17 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Dependency for SQLite database
-# The check_same_thread=False is needed for SQLite to work with FastAPI
+# Cấu hình kết nối tới cơ sở dữ liệu SQLite cục bộ
 SQLALCHEMY_DATABASE_URL = "sqlite:///./todolist.db"
 
+connect_args = {}
+if SQLALCHEMY_DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
 engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
+    SQLALCHEMY_DATABASE_URL, connect_args=connect_args
 )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

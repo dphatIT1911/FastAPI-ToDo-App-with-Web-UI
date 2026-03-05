@@ -1,142 +1,155 @@
-# FastAPI ToDo Application
+# Bài 05 - Bài tập to-do-list
 
-Ứng dụng quản lý công việc (ToDo List) được xây dựng bằng FastAPI với kiến trúc phân tầng rõ ràng.
+Dưới đây là tài liệu chi tiết về dự án To-Do List FastAPI được xây dựng và hoàn thiện qua 8 cấp độ từ cơ bản đến nâng cao.
 
-## Yêu cầu đã hoàn thành
+---
 
-### ✅ Cấp 0 - Hello To-Do
-- GET `/health` → trả về `{"status": "ok"}`
-- GET `/` → trả về message chào mừng
+## Cấp 0 — Làm quen FastAPI (Hello To-Do)
+**Mục tiêu:** tạo API tối thiểu chạy được.
+**Yêu cầu:**
+- Tạo project FastAPI
+- Endpoint:
+  - `GET /health` → trả `{ "status": "ok" }`
+  - `GET /` → trả message chào
+**Tiêu chí đạt:**
+- Chạy uvicorn và gọi được 2 endpoint.
 
-### ✅ Cấp 1 - CRUD cơ bản
-- Model ToDo với `id`, `title`, `is_done`
-- POST `/api/v1/todos` - Tạo todo mới
-- GET `/api/v1/todos` - Lấy danh sách todos
-- GET `/api/v1/todos/{id}` - Lấy chi tiết todo
-- PUT `/api/v1/todos/{id}` - Cập nhật todo
-- DELETE `/api/v1/todos/{id}` - Xóa todo
-- Validation bằng Pydantic
-- Trả lỗi 404 khi không tìm thấy
+---
 
-### ✅ Cấp 2 - Validation + Filter/Sort/Pagination
-- Validation: title không rỗng, độ dài 3-100 ký tự
-- Filter: `is_done=true/false`
-- Search: `q=keyword` (tìm theo title)
-- Sort: `sort=created_at` hoặc `sort=-created_at`
-- Pagination: `limit`, `offset`
-- Response structure: `{"items": [...], "total": 123, "limit": 10, "offset": 0}`
+## Cấp 1 — CRUD cơ bản (dữ liệu trong RAM)
+**Mục tiêu:** làm CRUD với list/dict trong bộ nhớ (chưa dùng DB).
+**Model ToDo:**
+- `id`: int
+- `title`: str
+- `is_done`: bool = False
+**Endpoints gợi ý:**
+- `POST /todos` tạo todo
+- `GET /todos` lấy danh sách
+- `GET /todos/{id}` lấy chi tiết
+- `PUT /todos/{id}` cập nhật toàn bộ
+- `DELETE /todos/{id}` xóa
+**Tiêu chí đạt:**
+- Validate dữ liệu bằng Pydantic
+- Trả lỗi đúng khi không tìm thấy (404)
 
-### ✅ Cấp 3 - Kiến trúc phân tầng
-- Cấu trúc thư mục: `routers/`, `schemas/`, `services/`, `repositories/`, `core/`
-- Sử dụng APIRouter với prefix `/api/v1`
-- Config bằng `pydantic-settings` (.env)
-- Logic DB tách biệt khỏi router
-- File `main.py` sạch
+---
 
-## Cài đặt
+## Cấp 2 — Validation “xịn” + filter/sort/pagination
+**Mục tiêu:** API giống thực tế hơn.
+**Yêu cầu:**
+- `title` không được rỗng, độ dài 3–100
+- `GET /todos` hỗ trợ:
+  - filter: `is_done=true/false`
+  - search: `q=keyword` (tìm theo title)
+  - sort: `sort=created_at` hoặc `sort=-created_at`
+  - pagination: `limit`, `offset`
+**Tiêu chí đạt:**
+- Response có cấu trúc:
+  `{ "items": [...], "total": 123, "limit": 10, "offset": 0 }`
 
-1. Tạo virtual environment:
-```bash
-python -m venv venv
-```
+---
 
-2. Kích hoạt virtual environment:
-- Windows:
-```bash
-venv\Scripts\activate
-```
-- Linux/Mac:
-```bash
-source venv/bin/activate
-```
+## Cấp 3 — Tách tầng (router/service/repository) + cấu hình chuẩn
+**Mục tiêu:** viết như dự án thật.
+**Yêu cầu:**
+- Tách thư mục: `routers/`, `schemas/`, `services/`, `repositories/`, `core/`
+- Dùng `APIRouter`, prefix `/api/v1`
+- Config bằng `pydantic-settings` (env): `APP_NAME`, `DEBUG`, …
+**Tiêu chí đạt:**
+- Không viết logic DB trong router
+- Có file `main.py` sạch
 
-3. Cài đặt dependencies:
+---
+
+## Cấp 4 — Dùng Database (SQLite/PostgreSQL) + ORM
+**Mục tiêu:** lưu dữ liệu thật.
+**Yêu cầu:**
+- Dùng SQLAlchemy (hoặc SQLModel)
+- Bảng `todos` có: `id`, `title`, `description`, `is_done`, `created_at`, `updated_at`
+- Migration bằng Alembic (nếu dùng SQLAlchemy)
+- Endpoints thêm:
+  - `PATCH /todos/{id}` cập nhật một phần (vd: chỉ `is_done`)
+  - `POST /todos/{id}/complete` đánh dấu hoàn thành (tùy bạn)
+**Tiêu chí đạt:**
+- `created_at`/`updated_at` tự cập nhật
+- Query có pagination thực sự từ DB
+
+---
+
+## Cấp 5 — Authentication + User riêng
+**Mục tiêu:** mỗi user có to-do riêng.
+**Yêu cầu:**
+- Bảng `users`: `id`, `email`, `hashed_password`, `is_active`, `created_at`
+- JWT login:
+  - `POST /auth/register`
+  - `POST /auth/login`
+  - `GET /auth/me`
+- Todo gắn `owner_id`
+**Tiêu chí đạt:**
+- User A không xem/xóa todo của User B
+- Password hash bằng passlib/bcrypt
+
+---
+
+## Cấp 6 — Nâng cao (tag, deadline, nhắc việc)
+**Mục tiêu:** thêm tính năng giống app thật.
+**Yêu cầu tính năng:**
+- `due_date` (deadline)
+- `tags` (nhiều tag)
+- `GET /todos/overdue` danh sách quá hạn
+- `GET /todos/today` việc cần làm hôm nay
+
+---
+
+## Cấp 7 — Testing + tài liệu + deploy
+**Mục tiêu:** hoàn chỉnh quy trình.
+**Yêu cầu:**
+- Viết test bằng pytest + TestClient
+- Test các case:
+  - tạo thành công
+  - validation fail
+  - 404
+  - auth fail
+- Dockerfile + docker-compose (nếu dùng Postgres)
+- Viết README chạy dự án
+
+---
+
+## Hướng dẫn Chạy Dự Án & Deploy (Theo Cấp 7)
+
+### Cài đặt môi trường Lab
+Khởi tạo và cài đặt các thư viện cần dùng:
 ```bash
 pip install -r requirements.txt
 ```
 
-## Chạy ứng dụng
-
+### Khởi tạo Cơ sở dữ liệu (SQLite)
+Chạy lệnh migration bằng Alembic để khởi tạo các bảng:
 ```bash
-uvicorn app.main:app --reload
+alembic upgrade head
 ```
 
-Hoặc:
+### Chạy Server (Local)
+Dự án được khởi động bằng lệnh:
 ```bash
-python app/main.py
+python -m app.main
+# Hoặc: uvicorn app.main:app --reload
 ```
+- Web UI: [http://localhost:8000/static/index.html](http://localhost:8000/static/index.html)
+- Docs (Swagger API): [http://localhost:8000/docs](http://localhost:8000/docs)
 
-Ứng dụng sẽ chạy tại: http://localhost:8000
-
-## API Documentation
-
-Truy cập Swagger UI tại: http://localhost:8000/docs
-
-## Cấu trúc dự án
-
-```
-Todolist - FastAPI - TH1/
-├── app/
-│   ├── __init__.py
-│   ├── main.py                 # Entry point, FastAPI app
-│   ├── core/
-│   │   ├── __init__.py
-│   │   └── config.py           # Pydantic Settings config
-│   ├── schemas/
-│   │   ├── __init__.py
-│   │   └── todo.py             # Pydantic models (validation)
-│   ├── repositories/
-│   │   ├── __init__.py
-│   │   └── todo_repository.py  # Data access layer (in-memory)
-│   ├── services/
-│   │   ├── __init__.py
-│   │   └── todo_service.py     # Business logic
-│   └── api/
-│       ├── __init__.py
-│       └── v1/
-│           ├── __init__.py
-│           ├── api.py          # API router aggregator
-│           └── routers/
-│               ├── __init__.py
-│               └── todos.py    # ToDo endpoints
-├── .env                        # Environment variables
-├── requirements.txt            # Dependencies
-├── EXPLANATION.md              # Giải thích CRUD, Endpoint, Uvicorn
-└── README.md                   # This file
-```
-
-## Ví dụ sử dụng
-
-### Tạo ToDo mới
+### Deploy bằng Docker
+Dự án được cấu hình sẵn Dockerfile với SQLite cực kỳ tinh gọn.
+Build image và chạy container:
 ```bash
-curl -X POST "http://localhost:8000/api/v1/todos" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Học FastAPI"}'
+docker build -t fastapi-todo .
+docker run -d -p 8000:8000 --name my_todo_app fastapi-todo
 ```
 
-### Lấy danh sách ToDo với filter và pagination
+### Chạy Testing (Kiểm thử chức năng)
+Chạy tự động kiểm thử để xác minh logic backend bằng Pytest:
 ```bash
-curl "http://localhost:8000/api/v1/todos?is_done=false&limit=10&offset=0"
+py -m pytest tests/ -v
+# Hoặc: python -m pytest tests/ -v
 ```
-
-### Tìm kiếm ToDo
-```bash
-curl "http://localhost:8000/api/v1/todos?q=FastAPI"
-```
-
-### Sắp xếp theo thời gian tạo
-```bash
-curl "http://localhost:8000/api/v1/todos?sort=-created_at"
-```
-
-### Cập nhật ToDo
-```bash
-curl -X PUT "http://localhost:8000/api/v1/todos/1" \
-  -H "Content-Type: application/json" \
-  -d '{"title": "Học FastAPI nâng cao", "is_done": true}'
-```
-
-### Xóa ToDo
-```bash
-curl -X DELETE "http://localhost:8000/api/v1/todos/1"
-```
+Toàn bộ các yêu cầu của Cấp độ 7 đã được bao phủ toàn diện nhất!

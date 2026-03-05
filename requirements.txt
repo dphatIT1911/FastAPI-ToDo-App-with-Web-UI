@@ -9,3 +9,6 @@ passlib[bcrypt]
 python-multipart
 email-validator
 bcrypt
+pytest
+httpx
+pytest-asyncio
